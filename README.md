@@ -47,3 +47,7 @@ source venv/bin/activate
 
 # 4. Install semua dependensi yang dibutuhkan
 pip install -r requirements.txt
+
+# 5.siap di gunakan 
+Cukup berikan URL target menggunakan flag -u atau --url.
+python3 jspector.py --url [https://example.com](https://example.com)
