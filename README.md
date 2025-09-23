@@ -1,33 +1,49 @@
-# suanggipector 🕵️‍♂️
+<div align="center">
+  <h1 align="center">suanggipector 🕵️‍♂️</h1>
+  <p align="center">
+    <strong>Tools recon untuk memburu endpoint, secret, dan informasi sensitif di dalam file JavaScript.</strong>
+  </p>
+  <p align="center">
+    <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python Version">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+    <img src="https://img.shields.io/badge/Status-Aktif-brightgreen" alt="Status">
+  </p>
+</div>
 
-suanggipector (JavaScript Inspector) adalah tools recon sederhana berbasis Python. Tools ini merayapi situs web target, mengekstrak semua file JavaScript eksternal dan inline, lalu memindainya untuk mencari informasi menarik seperti endpoint API, potensi secret, API key, dan subdomain.
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/YOUR_USER_ID/YOUR_REPO_ID/....gif" alt="suanggipector-demo">
+</p>
 
-## Fitur
-- **Merayapi Target**: Secara otomatis menemukan tag `<script>` pada URL yang diberikan.
-- **Mengekstrak JS**: Menangani file JS eksternal (`src`) dan script inline.
-- **Pemindaian Regex**: Menggunakan pola regex untuk menemukan:
-    - Path URL & Endpoint API
-    - API Key (Google, AWS)
-    - URL Firebase
-    - Secret/Token Generik
-- **Output Berwarna**: Tampilan CLI yang bersih dan mudah dibaca.
-- **Simpan ke File**: Opsi untuk menyimpan hasil pemindaian ke file teks.
+`suanggipector` adalah tools recon sederhana berbasis Python yang secara otomatis merayapi situs web target untuk menemukan semua file JavaScript (eksternal & inline). Setelah itu, ia akan memindai isinya untuk mencari informasi menarik yang sering kali tersembunyi, seperti endpoint API, potensi secret, API key, dan subdomain.
 
-## Instalasi
-1.  **Clone repositori ini:**
-    ```bash
-    git clone [https://github.com/suanggiLaut/suanggipector.git](https://github.com/suanggipector/suanggipector.git)
-    cd suanggipector
-    ```
+## ✨ Fitur Utama
 
-2.  **Install dependensi:**
-    Sangat disarankan untuk menggunakan virtual environment.
-    ```bash
-    pip install -r requirements.txt
-    ```
+- **Crawling Cerdas**: Menemukan semua tag `<script>` dari URL target.
+- **Ekstraksi Komprehensif**: Menganalisis file `.js` eksternal dan juga script *inline*.
+- **Pemindaian Berbasis Regex**: Menggunakan pola-pola cerdas untuk mendeteksi:
+    - Path URL & Endpoint API (`/api/v1/users`)
+    - API Key (Google, AWS, dll.)
+    - URL Pihak Ketiga (misalnya, Firebase)
+    - Kata Kunci Sensitif (`secret`, `token`, `password`, `auth_key`)
+- **Tampilan Interaktif**: Output berwarna yang bersih untuk memudahkan analisis.
+- **Simpan Hasil**: Opsi untuk menyimpan semua temuan ke dalam file teks.
 
-## Penggunaan
-Cukup berikan URL target untuk memulai pemindaian.
+---
+
+## 🚀 Instalasi & Persiapan
+
+Anda bisa menjalankan `suanggipector` hanya dengan beberapa langkah mudah.
 
 ```bash
-python jspector.py -u [https://example.com](https://example.com)
+# 1. Clone repositori ini
+git clone [https://github.com/suanggiLaut/suanggipector.git](https://github.com/suanggiLaut/suanggipector.git)
+
+# 2. Masuk ke direktori
+cd suanggipector
+
+# 3. (Sangat disarankan) Buat dan aktifkan virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 4. Install semua dependensi yang dibutuhkan
+pip install -r requirements.txt
