@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for suanggipector v2.3
+Unit tests for suanggipector v2.7
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Covers: entropy calculation, false-positive filtering, path sanitization,
 AST analyzer, and regex patterns.
