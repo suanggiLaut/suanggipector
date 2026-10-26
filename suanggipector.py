@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-suanggipector v2.3 — JavaScript Reconnaissance Scanner
+suanggipector v2.7 — JavaScript Reconnaissance Scanner
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Deep Chunk Discovery | 40+ Secret Patterns | Entropy Analysis
 Source Map Reconstruction | AST Sink Extraction | WAF Detection
+Framework-Specific Intelligence | Next.js / WordPress / Laravel Recon
 
 Usage:
     python suanggipector.py -u https://target.com
-    python suanggipector.py -u https://target.com --extract-sourcemaps --ast-analysis --output-json results.json
+    python suanggipector.py -u https://target.com --framework-detect --ast-analysis --output-json results.json
 
 https://github.com/suanggiLaut/suanggipector
 """
@@ -38,6 +39,7 @@ from core.crawler import (
 )
 from modules.sourcemap import discover_source_map, reconstruct_sources
 from modules.ast_analyzer import ASTAnalyzer
+from modules.framework import run_framework_intel
 
 init(autoreset=True)
 
@@ -59,6 +61,7 @@ RESULTS = {
     "suspicious_b64": [],
     "ast_sinks": [],
     "ast_api_routes": [],
+    "framework_intel": {},
 }
 
 # ---------------------------------------------------------------------------
@@ -72,8 +75,8 @@ _BANNER = r"""
 ███████║╚██████╔╝██║  ██║██║ ╚████║╚██████╔╝╚██████╔╝██╗██║     ███████╗╚██████╗   ██║   ╚██████╔╝██║  ██║
 ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝  ╚═════╝ ╚═╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
 
-    suanggipector v2.3 — JavaScript Reconnaissance Scanner
-    Deep Chunk Discovery | 40+ Secrets | Entropy | Source Map Recon | AST Analysis
+    suanggipector v2.7 — JavaScript Reconnaissance Scanner
+    Deep Chunk Discovery | 40+ Secrets | Entropy | Source Map Recon | AST | Framework Intel
 """
 
 
@@ -227,6 +230,26 @@ def print_summary(waf_info, output_file):
     if RESULTS.get('ast_api_routes'):
         lines.append(f"AST API routes    : {len(RESULTS['ast_api_routes'])}")
 
+    # Framework intel summary
+    fw_intel = RESULTS.get('framework_intel', {})
+    if fw_intel:
+        fw_list = fw_intel.get('frameworks', [])
+        if fw_list:
+            fw_names = [f"{fw['name']} [{fw['confidence']}]" for fw in fw_list]
+            lines.append(f"Frameworks        : {', '.join(fw_names)}")
+        wp_users = fw_intel.get('wp_users', [])
+        if wp_users:
+            lines.append(f"WP users exposed  : {len(wp_users)}")
+        nextjs_routes = fw_intel.get('nextjs_data_routes', [])
+        if nextjs_routes:
+            lines.append(f"Next.js data routes: {len(nextjs_routes)}")
+        laravel = fw_intel.get('laravel_findings', [])
+        for lf in laravel:
+            if lf.get('debug_mode'):
+                lines.append(f"Laravel debug     : ACTIVE — {', '.join(lf.get('debug_evidence', []))}")
+            if lf.get('env_leaked'):
+                lines.append(f"Laravel .env      : EXPOSED (CRITICAL)")
+
     if waf_info:
         lines.append(f"WAF detected      : {', '.join(waf_info)} (results may be incomplete)")
 
@@ -290,13 +313,13 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "suanggipector v2.3 — JS Reconnaissance Scanner with Deep Chunk "
+            "suanggipector v2.7 — JS Reconnaissance Scanner with Deep Chunk "
             "Discovery, Entropy Analysis, Source Map Reconstruction, "
-            "AST Sink Extraction & WAF Detection"
+            "AST Sink Extraction, WAF Detection & Framework-Specific Intelligence"
         ),
         epilog=(
             "Example: python suanggipector.py -u https://target.com "
-            "-o results.txt --output-json results.json --ast-analysis"
+            "-o results.txt --output-json results.json --framework-detect --ast-analysis"
         ),
     )
 
@@ -339,7 +362,16 @@ def main():
                          help="Enable Tree-sitter AST analysis for sink "
                               "extraction (fetch, axios, XHR, API routes).")
     parser.add_argument("--output-json",
-                         help="Save structured results to JSON file (v2.3 flag).")
+                         help="Save structured results to JSON file.")
+
+    # -- v2.7 Framework-Specific Intelligence ---------------------------------
+    parser.add_argument("--framework-detect", action="store_true",
+                         help="Enable framework fingerprinting and "
+                              "framework-specific recon (Next.js, WordPress, "
+                              "Laravel, etc.).")
+    parser.add_argument("--no-framework-probe", action="store_true",
+                         help="Fingerprint only — skip active framework probing "
+                              "(use with --framework-detect for passive detection).")
 
     args = parser.parse_args()
 
@@ -363,7 +395,7 @@ def main():
     if output_file:
         print(Fore.YELLOW + f"[INFO] Results will be saved to: {output_file}")
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.write("=== suanggipector Recon Results (v2.3) ===\n")
+            f.write("=== suanggipector Recon Results (v2.7) ===\n")
             f.write(f"Target: {target_url}\n")
             f.write(f"Entropy Threshold: {entropy_threshold}\n")
             f.write(
@@ -372,6 +404,7 @@ def main():
             )
             f.write(f"AST Analysis: {'ON' if args.ast_analysis else 'OFF'}\n")
             f.write(f"Source Map Extraction: {'ON' if args.extract_sourcemaps else 'OFF'}\n")
+            f.write(f"Framework Detection: {'ON' if args.framework_detect else 'OFF'}\n")
             f.write(f"Scan Time: {__import__('datetime').datetime.now()}\n")
             f.write("=" * 50 + "\n")
 
@@ -392,6 +425,25 @@ def main():
     js_links, inline_scripts, waf_info = get_scripts(
         target_url, output_file, results=RESULTS
     )
+
+    # -- Framework-Specific Intelligence (v2.7) -------------------------------
+    framework_intel = None
+    if args.framework_detect:
+        print(Fore.MAGENTA + "[FRAMEWORK] Framework detection enabled.")
+        try:
+            fw_resp = request_with_retry(
+                target_url, timeout=15, retries=2,
+                base_delay=1.0, rotate_ua=True,
+            )
+            fw_html = fw_resp.text
+            fw_headers = dict(fw_resp.headers)
+            framework_intel = run_framework_intel(
+                target_url, fw_html, fw_headers,
+                results=RESULTS, results_lock=RESULTS_LOCK,
+                output_file=output_file,
+            )
+        except Exception as e:
+            print(Fore.RED + f"[FRAMEWORK] Error during framework detection: {e}")
 
     if not js_links and not inline_scripts:
         print(Fore.YELLOW + "[INFO] No JavaScript files or inline scripts found.")
